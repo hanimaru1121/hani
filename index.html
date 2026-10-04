@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ハニ</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ebe3d8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ハニ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* layout: Hani fills the screen like a room she lives in; the care buttons sit low in a soft bar, poses tuck behind a "more" toggle.
+   One fixed look on purpose: the room is the same warm studio wall as the videos, in light or dark mode. #desk = the small always-on-top window on a Mac. */
+:root{
+  --room:#ebe3d8;            /* updated live from the video's own wall colour */
+  --bar:rgba(255,252,247,.72); --bar-line:rgba(120,96,72,.16);
+  --ink:#2b2520; --sub:#6f6257; --accent:#c8743d; --accent-ink:#fff;
+  --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--room);color:var(--ink);font-family:var(--display);overflow:hidden;transition:background-color 1.2s linear;user-select:none;-webkit-user-select:none}
+.stage{position:fixed;inset:0;cursor:pointer;outline:none}
+.hani{position:absolute;left:50%;top:54%;width:min(100vw,74svh);aspect-ratio:1/1;max-width:100%;transform:translate(-50%,-50%);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16%,#000 86%,transparent 100%),linear-gradient(to right,transparent 0,#000 9%,#000 91%,transparent 100%);
+  -webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent 0,#000 16%,#000 86%,transparent 100%),linear-gradient(to right,transparent 0,#000 9%,#000 91%,transparent 100%);mask-composite:intersect}
+@media (max-aspect-ratio: 3/4){ .hani{ -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16%,#000 86%,transparent 100%); mask-image:linear-gradient(to bottom,transparent 0,#000 16%,#000 86%,transparent 100%) } }
+.hani video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .18s linear;pointer-events:none}
+.hani video.top{z-index:2}
+.hani video.shown{opacity:1}
+.tag{position:fixed;z-index:5;top:calc(env(safe-area-inset-top,0px) + 14px);left:16px;background:var(--bar);border:1px solid var(--bar-line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  color:var(--ink);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:700;pointer-events:none}
+.loading{position:fixed;z-index:6;inset:0;display:grid;place-items:center;color:var(--sub);font-size:15px;background:var(--room)}
+.loading[hidden]{display:none}
+.dock{position:fixed;z-index:5;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);width:min(calc(100vw - 32px),460px);display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;padding:8px;background:var(--bar);border:1px solid var(--bar-line);border-radius:22px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.row button{flex:1;min-width:0;border:0;border-radius:16px;padding:12px 4px;background:transparent;color:var(--ink);font-family:var(--display);font-weight:700;font-size:15px;cursor:pointer}
+.row button:active{background:rgba(200,116,61,.14)}
+.row button.on{background:var(--accent);color:var(--accent-ink)}
+.row button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.row.more{font-size:14px}
+.row.more button{font-size:13px;padding:10px 0;white-space:nowrap;letter-spacing:-.02em}
+.row.more[hidden]{display:none}
+#bMore{flex:0 0 52px;font-size:18px;letter-spacing:1px}
+@media (prefers-reduced-motion: reduce){ .hani video{transition:none} body{transition:none} }
+
+/* the Mac desk window: only Hani, controls appear on hover */
+body.desk .hani{top:50%;width:100vw;max-width:none;-webkit-mask-image:radial-gradient(closest-side,#000 78%,transparent 100%);mask-image:radial-gradient(closest-side,#000 78%,transparent 100%)}
+body.desk .tag{top:8px;left:auto;right:8px;font-size:12px;padding:4px 10px;opacity:0;transition:opacity .2s}
+body.desk .dock{bottom:8px;width:calc(100vw - 16px);opacity:0;transition:opacity .2s}
+body.desk .row{padding:4px;border-radius:14px}
+body.desk .row button{padding:6px 2px;font-size:12px;border-radius:10px}
+body.desk #bMore{flex-basis:32px;font-size:13px}
+body.desk:hover .tag,body.desk:hover .dock{opacity:1}
+</style>
+
+<div class="stage" id="stage" tabindex="0" role="button" aria-label="ハニをなでる・呼ぶ">
+  <div class="hani">
+    <video id="vA" muted playsinline preload="auto"></video>
+    <video id="vB" muted playsinline preload="auto"></video>
+  </div>
+</div>
+<div class="tag" id="tag">のんびり</div>
+<div class="dock">
+  <div class="row more" id="more" hidden>
+    <button data-pose="stand">立つ</button><button data-pose="sit">おすわり</button><button data-pose="lie">ふせ</button><button data-pose="sleep">ねんね</button><button id="bCall">呼ぶ</button>
+  </div>
+  <div class="row">
+    <button data-care="pet">なでる</button><button data-care="treat">おやつ</button><button data-care="water">お水</button><button id="bMore" aria-expanded="false" aria-controls="more" aria-label="姿勢を頼む">…</button>
+  </div>
+</div>
+<div class="loading" id="loading">ハニを呼んでいます…</div>
+
+<script>
+(function(){
+if(location.hash==="#desk")document.body.classList.add("desk");
+const CLIP_NAMES=["treat","water","pet_calm","pet_dodge","idle_stand","idle_sit","idle_lie","idle_sleep","stand_sit","sit_stand","sit_lie","lie_sit","stand_lie","lie_stand","lie_sleep","sleep_lie"];
+/* which pose each transition leads to */
+const EDGES={stand:{sit:"stand_sit",lie:"stand_lie"},sit:{stand:"sit_stand",lie:"sit_lie"},lie:{sit:"lie_sit",stand:"lie_stand",sleep:"lie_sleep"},sleep:{lie:"sleep_lie"}};
+const LABEL={stand:"のんびり",sit:"おすわり",lie:"ふせ",sleep:"ねんね"};
+/* care actions: which pose they happen in, and what the tag says meanwhile */
+const CARE={treat:{pose:"sit",label:"もぐもぐ"},water:{pose:"stand",label:"ぴちゃぴちゃ"},pet:{pose:"lie"}};
+/* petting goes either way, like the real Hani: usually she settles, sometimes she ducks away */
+const PET_CALM=0.7;
+function careClip(care){
+  if(care!=="pet")return {clip:care,label:CARE[care].label};
+  return Math.random()<PET_CALM?{clip:"pet_calm",label:"うっとり"}:{clip:"pet_dodge",label:"いまはいや"};
+}
+const URL_OF={};
+const stage=document.getElementById("stage"),tag=document.getElementById("tag"),loading=document.getElementById("loading");
+const layers=[document.getElementById("vA"),document.getElementById("vB")];
+let front=0, pose="stand", moving=null, queue=[], playing=null, holdTimer=0, idleCount=0, called=false;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const isNight=()=>{const h=new Date().getHours();return h>=22||h<6;};
+
+/* preload every clip into memory so switching never waits on the network; opened as a local file (the Mac window), play straight from disk */
+function preload(){
+  let done=0;
+  const one=n=>fetch("clips/"+n+".mp4").then(r=>{if(!r.ok)throw new Error(n);return r.blob();}).then(b=>{URL_OF[n]=URL.createObjectURL(b);done++;});
+  return Promise.all(CLIP_NAMES.map(one)).catch(()=>{CLIP_NAMES.forEach(n=>URL_OF[n]="clips/"+n+".mp4");});
+}
+
+/* play a clip on the back layer, then fade it over the front one */
+function play(name){
+  playing=name;
+  const next=layers[1-front], cur=layers[front];
+  return new Promise(res=>{
+    next.onloadeddata=null;
+    next.src=URL_OF[name];
+    next.onloadeddata=()=>{
+      next.currentTime=0;
+      const p=next.play(); if(p&&p.catch)p.catch(()=>{});
+      next.classList.add("top","shown"); cur.classList.remove("top");
+      setTimeout(()=>{cur.classList.remove("shown");cur.pause();},220);
+      front=1-front;
+      next.onended=()=>res(name);
+    };
+  });
+}
+
+/* shortest path between poses, as a list of transition clips */
+function path(from,to){
+  if(from===to)return [];
+  const prev={[from]:null},q=[from];
+  while(q.length){const p=q.shift();for(const n in EDGES[p]){if(!(n in prev)){prev[n]=p;q.push(n);}}}
+  const out=[];let n=to;while(prev[n]!==null){out.unshift({clip:EDGES[prev[n]][n],to:n});n=prev[n];}
+  return out;
+}
+
+function choose(){
+  const r=Math.random(), night=isNight();
+  if(pose==="sleep") return idleCount<rnd(4,8)?null:"lie";
+  if(pose==="stand") return r<0.55?null:r<0.82?"sit":"lie";
+  if(pose==="sit") return r<0.45?null:r<0.65?"stand":"lie";
+  if(pose==="lie") return r<0.4?null:r<(night?0.85:0.65)?"sleep":r<0.85?"sit":"stand";
+}
+
+function markButtons(){document.querySelectorAll("[data-pose]").forEach(b=>b.classList.toggle("on",b.dataset.pose===pose));}
+
+async function step(){
+  clearTimeout(holdTimer);
+  if(queue.length){
+    const s=queue.shift();
+    tag.textContent=s.label||(s.to==="sleep"?"うとうと":s.to==="stand"&&called?"なあに？":"よいしょ");
+    moving=s.to; await play(s.clip); pose=s.to; moving=null; idleCount=0; markButtons();
+    return step();
+  }
+  if(called&&pose==="stand"){called=false;}
+  /* after a pose change, always spend at least one idle in the new pose */
+  const next=idleCount===0?null:choose();
+  if(next){queue=path(pose,next);return step();}
+  tag.textContent=(pose==="sleep"&&isNight())?"夜なのでねんね":LABEL[pose];
+  idleCount++;
+  await play("idle_"+pose);
+  if(queue.length) return step();
+  /* sometimes just stay still for a moment, like a real dog */
+  if(pose!=="sleep"&&Math.random()<0.4){holdTimer=setTimeout(step,rnd(1200,3500));return;}
+  return step();
+}
+
+/* a request interrupts a calm idle right away; a pose change already underway finishes first */
+function request(to,care){
+  queue=path(moving||pose,to);
+  if(care){const c=careClip(care);queue.push({clip:c.clip,to,label:c.label});}
+  if(!queue.length)return;
+  if(moving)return;
+  if(playing&&playing.startsWith("idle_")){
+    const cur=layers[front]; cur.onended=null; cur.pause(); step();
+  }else if(!playing||holdTimer){step();}
+}
+document.querySelectorAll("[data-pose]").forEach(b=>b.onclick=e=>{e.stopPropagation();request(b.dataset.pose);});
+document.querySelectorAll("[data-care]").forEach(b=>b.onclick=e=>{e.stopPropagation();called=false;request(CARE[b.dataset.care].pose,b.dataset.care);});
+const call=()=>{called=true;tag.textContent="なあに？";request("stand");};
+document.getElementById("bCall").onclick=e=>{e.stopPropagation();call();};
+const more=document.getElementById("more"),bMore=document.getElementById("bMore");
+bMore.onclick=e=>{e.stopPropagation();more.hidden=!more.hidden;bMore.setAttribute("aria-expanded",String(!more.hidden));};
+/* tapping a lying Hani pets her; tapping her in any other pose calls her */
+const tap=()=>{if(moving)return;if(pose==="lie"){called=false;request("lie","pet");}else call();};
+stage.addEventListener("click",tap);
+stage.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tap();}});
+
+/* browsers pause muted video that scrolls out of view or sits in a background tab; resume it so the chain of clips never stalls */
+function resume(){const v=layers[front];if(v.src&&v.paused&&!v.ended){const p=v.play();if(p&&p.catch)p.catch(()=>{});}}
+setInterval(resume,1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)resume();});
+
+/* the room takes the colour of the wall behind Hani in the current clip, so the video's edge disappears */
+const probe=document.createElement("canvas");probe.width=probe.height=1;
+const pctx=probe.getContext("2d",{willReadFrequently:true});
+function matchRoom(){
+  const v=layers[front];if(!v.videoWidth)return;
+  try{pctx.drawImage(v,v.videoWidth*0.02,v.videoHeight*0.04,v.videoWidth*0.06,v.videoHeight*0.06,0,0,1,1);
+    const d=pctx.getImageData(0,0,1,1).data;document.documentElement.style.setProperty("--room",`rgb(${d[0]},${d[1]},${d[2]})`);}catch(_){}
+}
+setInterval(matchRoom,1500);
+
+/* keep the screen on while Hani is shown (a dedicated device on a stand), where the browser allows it */
+let lock=null;
+async function keepAwake(){try{if("wakeLock" in navigator&&!document.hidden)lock=await navigator.wakeLock.request("screen");}catch(_){}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)keepAwake();});
+
+preload().then(()=>{loading.hidden=true;markButtons();step();keepAwake();});
+})();
+</script>
