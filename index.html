@@ -2,20 +2,20 @@
 <html lang="ja">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ハニ</title>
+<title>うちの子ライブ</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ebe3d8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ハニ">
+<meta name="apple-mobile-web-app-title" content="うちの子">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
 <style>
-/* layout: Hani fills the screen like a room she lives in; the care buttons sit low in a soft bar, poses tuck behind a "more" toggle.
+/* layout: the pet fills the screen like a room it lives in; the care buttons sit low in a soft bar, poses tuck behind a "more" toggle.
    One fixed look on purpose: the room is the same warm studio wall as the videos, in light or dark mode. #desk = the small always-on-top window on a Mac. */
 :root{
   --room:#ebe3d8;            /* updated live from the video's own wall colour */
@@ -53,58 +53,156 @@ body{margin:0;background:var(--room);color:var(--ink);font-family:var(--display)
 
 /* the Mac desk window: only Hani, controls appear on hover */
 body.desk .hani{top:50%;width:100vw;max-width:none;-webkit-mask-image:radial-gradient(closest-side,#000 78%,transparent 100%);mask-image:radial-gradient(closest-side,#000 78%,transparent 100%)}
-body.desk .tag{top:8px;left:auto;right:8px;font-size:12px;padding:4px 10px;opacity:0;transition:opacity .2s}
-body.desk .dock{bottom:8px;width:calc(100vw - 16px);opacity:0;transition:opacity .2s}
-body.desk .row{padding:4px;border-radius:14px}
-body.desk .row button{padding:6px 2px;font-size:12px;border-radius:10px}
-body.desk #bMore{flex-basis:32px;font-size:13px}
-body.desk:hover .tag,body.desk:hover .dock{opacity:1}
+body.desk .tag,body.desk .dock{display:none}
+.deskmenu{display:none}
+body.desk .deskmenu{display:block;position:fixed;z-index:6;right:8px;bottom:8px}
+.deskmenu .open{width:30px;height:30px;border-radius:50%;border:1px solid var(--bar-line);background:var(--bar);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  color:var(--ink);font-size:14px;line-height:1;cursor:pointer;opacity:0;transition:opacity .2s}
+body.desk:hover .deskmenu .open,.deskmenu .open[aria-expanded="true"]{opacity:1}
+.deskmenu .list{position:absolute;right:0;bottom:36px;display:flex;flex-direction:column;min-width:112px;padding:4px;border-radius:12px;background:var(--bar);border:1px solid var(--bar-line);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 6px 18px rgba(60,40,20,.18)}
+.deskmenu .list[hidden]{display:none}
+.deskmenu .list button{border:0;background:transparent;color:var(--ink);font-family:var(--display);font-weight:700;font-size:12px;text-align:left;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.deskmenu .list button:hover{background:rgba(200,116,61,.16)}
+.deskmenu .list hr{border:0;border-top:1px solid var(--bar-line);margin:3px 6px}
+
+/* the shelf: choose which pet lives here (public samples, or a private one by its code) */
+.shelf{position:fixed;z-index:7;inset:0;overflow:auto;background:var(--room);padding:calc(env(safe-area-inset-top,0px) + 28px) 20px calc(env(safe-area-inset-bottom,0px) + 28px)}
+.shelf[hidden]{display:none}
+.shelf .in{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.shelf h1{font-size:24px;margin:0}
+.shelf h2{font-size:15px;margin:0 0 10px;color:var(--sub)}
+.shelf p{margin:0;color:var(--sub);font-size:14px;line-height:1.6}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;border-radius:18px;border:1px solid var(--bar-line);background:var(--bar);font-family:var(--display);font-weight:700;font-size:15px;color:var(--ink);cursor:pointer}
+.card img{width:88px;height:88px;border-radius:24px;object-fit:cover}
+.code{display:flex;gap:8px}
+.code input{flex:1;min-width:0;font:inherit;font-size:16px;padding:12px 14px;border-radius:14px;border:1px solid var(--bar-line);background:#fffdf9;color:var(--ink)}
+.code button{border:0;border-radius:14px;padding:0 18px;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-weight:700;font-size:15px;cursor:pointer}
+.code input:focus-visible,.code button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.err{color:#a6402a;font-size:14px;min-height:1.4em}
 </style>
 
-<div class="stage" id="stage" tabindex="0" role="button" aria-label="ハニをなでる・呼ぶ">
+<div class="stage" id="stage" tabindex="0" role="button" aria-label="なでる・呼ぶ">
   <div class="hani">
     <video id="vA" muted playsinline preload="auto"></video>
     <video id="vB" muted playsinline preload="auto"></video>
   </div>
 </div>
-<div class="tag" id="tag">のんびり</div>
+<div class="tag" id="tag"></div>
 <div class="dock">
-  <div class="row more" id="more" hidden>
-    <button data-pose="stand">立つ</button><button data-pose="sit">おすわり</button><button data-pose="lie">ふせ</button><button data-pose="sleep">ねんね</button><button id="bCall">呼ぶ</button>
-  </div>
-  <div class="row">
-    <button data-care="pet">なでる</button><button data-care="treat">おやつ</button><button data-care="water">お水</button><button id="bMore" aria-expanded="false" aria-controls="more" aria-label="姿勢を頼む">…</button>
-  </div>
+  <div class="row more" id="more" hidden></div>
+  <div class="row" id="careRow"></div>
 </div>
-<div class="loading" id="loading">ハニを呼んでいます…</div>
+<div class="deskmenu" id="deskmenu">
+  <div class="list" id="deskList" hidden></div>
+  <button class="open" id="bDeskMenu" aria-expanded="false" aria-controls="deskList" aria-label="メニュー">≡</button>
+</div>
+<div class="loading" id="loading" hidden>呼んでいます…</div>
+
+<section class="shelf" id="shelf" hidden>
+  <div class="in">
+    <div>
+      <h1>うちの子ライブ</h1>
+      <p>スマホの中で暮らす子を迎えます。</p>
+    </div>
+    <div>
+      <h2>みんなの棚</h2>
+      <div class="cards" id="cards"></div>
+      <p id="noCards" hidden>準備中です。</p>
+    </div>
+    <div>
+      <h2>コードで迎える</h2>
+      <p>うちの子を作った人には、その子だけの迎え入れコードをお渡ししています。</p>
+      <form class="code" id="codeForm" autocomplete="off">
+        <input id="codeInput" aria-label="迎え入れコード" placeholder="迎え入れコード" autocapitalize="off" spellcheck="false">
+        <button type="submit">迎える</button>
+      </form>
+      <div class="err" id="codeErr" role="status"></div>
+    </div>
+  </div>
+</section>
 
 <script>
 (function(){
-if(location.hash==="#desk")document.body.classList.add("desk");
-const CLIP_NAMES=["treat","water","pet_calm","pet_dodge","idle_stand","idle_sit","idle_lie","idle_sleep","stand_sit","sit_stand","sit_lie","lie_sit","stand_lie","lie_stand","lie_sleep","sleep_lie"];
-/* which pose each transition leads to */
-const EDGES={stand:{sit:"stand_sit",lie:"stand_lie"},sit:{stand:"sit_stand",lie:"sit_lie"},lie:{sit:"lie_sit",stand:"lie_stand",sleep:"lie_sleep"},sleep:{lie:"sleep_lie"}};
-const LABEL={stand:"のんびり",sit:"おすわり",lie:"ふせ",sleep:"ねんね"};
-/* care actions: which pose they happen in, and what the tag says meanwhile */
-const CARE={treat:{pose:"sit",label:"もぐもぐ"},water:{pose:"stand",label:"ぴちゃぴちゃ"},pet:{pose:"lie"}};
-/* petting goes either way, like the real Hani: usually she settles, sometimes she ducks away */
-const PET_CALM=0.7;
-function careClip(care){
-  if(care!=="pet")return {clip:care,label:CARE[care].label};
-  return Math.random()<PET_CALM?{clip:"pet_calm",label:"うっとり"}:{clip:"pet_dodge",label:"いまはいや"};
-}
-const URL_OF={};
-const stage=document.getElementById("stage"),tag=document.getElementById("tag"),loading=document.getElementById("loading");
-const layers=[document.getElementById("vA"),document.getElementById("vB")];
-let front=0, pose="stand", moving=null, queue=[], playing=null, holdTimer=0, idleCount=0, called=false;
+/* ---------- which pet lives here ----------
+   A pet is a folder pets/<id>/ with pet.json + clips/. Public pets are listed in pets/catalog.json;
+   private ones are not listed and are opened by their code (the folder id). The choice is remembered. */
+const KEY="uchinoko.pet";
+const params=new URLSearchParams(location.search);
+const desk=location.hash==="#desk";
+if(desk)document.body.classList.add("desk");
+const store={get(){try{return localStorage.getItem(KEY)}catch(_){return null}},set(v){try{v?localStorage.setItem(KEY,v):localStorage.removeItem(KEY)}catch(_){}}};
+const $=id=>document.getElementById(id);
+const stage=$("stage"),tag=$("tag"),loading=$("loading"),shelf=$("shelf");
+const layers=[$("vA"),$("vB")];
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const isNight=()=>{const h=new Date().getHours();return h>=22||h<6;};
+const weighted=(items,w=x=>x.weight)=>{const total=items.reduce((s,x)=>s+w(x),0);let r=Math.random()*total;for(const x of items){r-=w(x);if(r<0)return x;}return items[items.length-1];};
+const validId=id=>/^[a-z0-9][a-z0-9-]{2,40}$/.test(id||"");
 
-/* preload every clip into memory so switching never waits on the network; opened as a local file (the Mac window), play straight from disk */
+async function loadPet(id){
+  if(!validId(id))throw new Error("bad id");
+  /* the Mac window opens the page from disk, where fetch() cannot read files; the app hands the pet over itself */
+  const given=window.__UCHINOKO_PETS__&&window.__UCHINOKO_PETS__[id];
+  if(given)return Object.assign({},given,{base:"pets/"+id+"/"});
+  const r=await fetch("pets/"+id+"/pet.json",{cache:"no-cache"});
+  if(!r.ok)throw new Error("not found");
+  const pet=await r.json();pet.base="pets/"+id+"/";return pet;
+}
+
+/* ---------- the shelf ---------- */
+async function showShelf(){
+  shelf.hidden=false;loading.hidden=true;
+  const cards=$("cards");cards.textContent="";
+  let list=[];
+  try{const r=await fetch("pets/catalog.json",{cache:"no-cache"});if(r.ok)list=(await r.json()).public||[];}catch(_){}
+  $("noCards").hidden=list.length>0;
+  for(const it of list){
+    const b=document.createElement("button");b.className="card";b.type="button";
+    const img=document.createElement("img");img.alt="";img.src="pets/"+it.id+"/"+(it.icon||"icon-180.png");
+    b.append(img,document.createTextNode(it.name));b.onclick=()=>adopt(it.id);cards.append(b);
+  }
+}
+async function adopt(id){
+  $("codeErr").textContent="";
+  try{const pet=await loadPet(id);store.set(id);shelf.hidden=true;start(pet);}
+  catch(_){ $("codeErr").textContent="その子が見つかりませんでした。コードをもう一度確かめてください。"; }
+}
+$("codeForm").addEventListener("submit",e=>{e.preventDefault();adopt($("codeInput").value.trim().toLowerCase());});
+
+/* ---------- the living pet ---------- */
+let P=null, URL_OF={}, EDGES={};
+let idling=false, front=0, pose="", moving=null, queue=[], playing=null, holdTimer=0, idleCount=0, called=false, lastIdle="";
+
+function setupUI(){
+  document.title=P.name;
+  stage.setAttribute("aria-label",P.name+"をなでる・呼ぶ");
+  const mk=(label,fn,attrs)=>{const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=e=>{e.stopPropagation();fn();};if(attrs)for(const k in attrs)b.dataset[k]=attrs[k];return b;};
+  const poseBtns=()=>Object.entries(P.poses).map(([k,v])=>mk(v.button,()=>request(k),{pose:k}));
+  const careBtns=()=>P.care.map(c=>mk(c.button,()=>{called=false;request(c.pose,c.id);}));
+  const callBtn=()=>mk(P.call.button,call);
+  const shelfBtn=()=>mk("ほかの子",()=>{store.set(null);location.href=location.pathname+(desk?"#desk":"");});
+  const more=$("more");more.textContent="";more.append(...poseBtns(),callBtn());
+  if(!params.get("pet")&&!onlyPet)more.append(shelfBtn());
+  const careRow=$("careRow");careRow.textContent="";
+  const bMore=mk("…",()=>{more.hidden=!more.hidden;bMore.setAttribute("aria-expanded",String(!more.hidden));});
+  bMore.id="bMore";bMore.setAttribute("aria-expanded","false");bMore.setAttribute("aria-label","姿勢を頼む");
+  careRow.append(...careBtns(),bMore);
+  const list=$("deskList");list.textContent="";
+  list.append(...careBtns(),document.createElement("hr"),...poseBtns(),callBtn());
+  if(!params.get("pet")&&!onlyPet)list.append(document.createElement("hr"),shelfBtn());
+}
+
 function preload(){
-  let done=0;
-  const one=n=>fetch("clips/"+n+".mp4").then(r=>{if(!r.ok)throw new Error(n);return r.blob();}).then(b=>{URL_OF[n]=URL.createObjectURL(b);done++;});
-  return Promise.all(CLIP_NAMES.map(one)).catch(()=>{CLIP_NAMES.forEach(n=>URL_OF[n]="clips/"+n+".mp4");});
+  const names=new Set();
+  for(const v of Object.values(P.poses))v.idles.forEach(i=>names.add(i.clip));
+  P.transitions.forEach(t=>names.add(t.clip));
+  P.care.forEach(c=>c.outcomes.forEach(o=>names.add(o.clip)));
+  const src=n=>P.base+"clips/"+n+".mp4";
+  /* keep every clip in memory so switching never waits on the network; opened from disk (the Mac window), play straight from the files */
+  return Promise.all([...names].map(n=>fetch(src(n)).then(r=>{if(!r.ok)throw 0;return r.blob();}).then(b=>{URL_OF[n]=URL.createObjectURL(b);})))
+    .catch(()=>{names.forEach(n=>URL_OF[n]=src(n));});
 }
 
 /* play a clip on the back layer, then fade it over the front one */
@@ -129,69 +227,83 @@ function play(name){
 function path(from,to){
   if(from===to)return [];
   const prev={[from]:null},q=[from];
-  while(q.length){const p=q.shift();for(const n in EDGES[p]){if(!(n in prev)){prev[n]=p;q.push(n);}}}
+  while(q.length){const p=q.shift();for(const n in (EDGES[p]||{})){if(!(n in prev)){prev[n]=p;q.push(n);}}}
+  if(!(to in prev))return [];
   const out=[];let n=to;while(prev[n]!==null){out.unshift({clip:EDGES[prev[n]][n],to:n});n=prev[n];}
   return out;
 }
 
+/* what to do after an idle: stay, or move to another pose, by the pet's own odds */
 function choose(){
-  const r=Math.random(), night=isNight();
-  if(pose==="sleep") return idleCount<rnd(4,8)?null:"lie";
-  if(pose==="stand") return r<0.55?null:r<0.82?"sit":"lie";
-  if(pose==="sit") return r<0.45?null:r<0.65?"stand":"lie";
-  if(pose==="lie") return r<0.4?null:r<(night?0.85:0.65)?"sleep":r<0.85?"sit":"stand";
+  const pp=P.poses[pose];
+  if(pp.stayIdles&&idleCount<rnd(pp.stayIdles[0],pp.stayIdles[1]))return null;
+  const odds=(isNight()&&pp.nightNext)||pp.next;
+  const pick=weighted(Object.entries(odds),([,w])=>w)[0];
+  return pick==="stay"?null:pick;
 }
-
+/* the plain idle (first) comes up by its weight; the habits fill the rest and never repeat back to back */
+function pickIdle(p){
+  const list=P.poses[p].idles.filter((x,i)=>i===0||x.clip!==lastIdle);
+  const pick=weighted(list);lastIdle=pick.clip;return pick;
+}
+function careClip(id){const c=P.care.find(x=>x.id===id);return weighted(c.outcomes);}
 function markButtons(){document.querySelectorAll("[data-pose]").forEach(b=>b.classList.toggle("on",b.dataset.pose===pose));}
 
 async function step(){
   clearTimeout(holdTimer);
   if(queue.length){
     const s=queue.shift();
-    tag.textContent=s.label||(s.to==="sleep"?"うとうと":s.to==="stand"&&called?"なあに？":"よいしょ");
+    tag.textContent=s.label||(s.to===P.call.pose&&called?P.call.label:(P.poses[s.to].arriveLabel||P.movingLabel));
     moving=s.to; await play(s.clip); pose=s.to; moving=null; idleCount=0; markButtons();
     return step();
   }
-  if(called&&pose==="stand"){called=false;}
+  if(called&&pose===P.call.pose)called=false;
   /* after a pose change, always spend at least one idle in the new pose */
   const next=idleCount===0?null:choose();
   if(next){queue=path(pose,next);return step();}
-  tag.textContent=(pose==="sleep"&&isNight())?"夜なのでねんね":LABEL[pose];
+  const pp=P.poses[pose], idle=pickIdle(pose);
+  tag.textContent=idle.label||((isNight()&&pp.nightLabel)||pp.label);
   idleCount++;
-  await play("idle_"+pose);
+  idling=true; await play(idle.clip); idling=false;
   if(queue.length) return step();
-  /* sometimes just stay still for a moment, like a real dog */
-  if(pose!=="sleep"&&Math.random()<0.4){holdTimer=setTimeout(step,rnd(1200,3500));return;}
+  /* sometimes just stay still for a moment, like a real animal */
+  if(!pp.noHold&&Math.random()<(P.holdChance||0)){holdTimer=setTimeout(step,rnd(1200,3500));return;}
   return step();
 }
 
 /* a request interrupts a calm idle right away; a pose change already underway finishes first */
 function request(to,care){
   queue=path(moving||pose,to);
-  if(care){const c=careClip(care);queue.push({clip:c.clip,to,label:c.label});}
+  if(care){const o=careClip(care);queue.push({clip:o.clip,to,label:o.label});}
   if(!queue.length)return;
   if(moving)return;
-  if(playing&&playing.startsWith("idle_")){
-    const cur=layers[front]; cur.onended=null; cur.pause(); step();
+  if(idling){
+    idling=false; const cur=layers[front]; cur.onended=null; cur.pause(); step();
   }else if(!playing||holdTimer){step();}
 }
-document.querySelectorAll("[data-pose]").forEach(b=>b.onclick=e=>{e.stopPropagation();request(b.dataset.pose);});
-document.querySelectorAll("[data-care]").forEach(b=>b.onclick=e=>{e.stopPropagation();called=false;request(CARE[b.dataset.care].pose,b.dataset.care);});
-const call=()=>{called=true;tag.textContent="なあに？";request("stand");};
-document.getElementById("bCall").onclick=e=>{e.stopPropagation();call();};
-const more=document.getElementById("more"),bMore=document.getElementById("bMore");
-bMore.onclick=e=>{e.stopPropagation();more.hidden=!more.hidden;bMore.setAttribute("aria-expanded",String(!more.hidden));};
-/* tapping a lying Hani pets her; tapping her in any other pose calls her */
-const tap=()=>{if(moving)return;if(pose==="lie"){called=false;request("lie","pet");}else call();};
+function call(){called=true;tag.textContent=P.call.label;request(P.call.pose);}
+/* tapping does what the pet's own table says for the pose it is in */
+function tap(){
+  if(!P||moving)return;
+  const act=P.tap[pose]||P.tap["*"];
+  if(act==="call")call();else{const c=P.care.find(x=>x.id===act);if(c){called=false;request(c.pose,c.id);}}
+}
 stage.addEventListener("click",tap);
 stage.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tap();}});
+
+/* the Mac desk window: a menu button on hover; choosing anything closes the list again */
+const deskList=$("deskList"),bDesk=$("bDeskMenu");
+const setDesk=open=>{deskList.hidden=!open;bDesk.setAttribute("aria-expanded",String(open));};
+bDesk.onclick=e=>{e.stopPropagation();setDesk(deskList.hidden);};
+deskList.addEventListener("click",()=>setDesk(false),true);  // capture: the buttons stop the click from bubbling
+document.addEventListener("mouseleave",()=>setDesk(false));
 
 /* browsers pause muted video that scrolls out of view or sits in a background tab; resume it so the chain of clips never stalls */
 function resume(){const v=layers[front];if(v.src&&v.paused&&!v.ended){const p=v.play();if(p&&p.catch)p.catch(()=>{});}}
 setInterval(resume,1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)resume();});
 
-/* the room takes the colour of the wall behind Hani in the current clip, so the video's edge disappears */
+/* the room takes the colour of the wall behind the pet in the current clip, so the video's edge disappears */
 const probe=document.createElement("canvas");probe.width=probe.height=1;
 const pctx=probe.getContext("2d",{willReadFrequently:true});
 function matchRoom(){
@@ -201,11 +313,27 @@ function matchRoom(){
 }
 setInterval(matchRoom,1500);
 
-/* keep the screen on while Hani is shown (a dedicated device on a stand), where the browser allows it */
-let lock=null;
-async function keepAwake(){try{if("wakeLock" in navigator&&!document.hidden)lock=await navigator.wakeLock.request("screen");}catch(_){}}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)keepAwake();});
+/* keep the screen on while the pet is shown (a dedicated device on a stand), where the browser allows it */
+async function keepAwake(){try{if("wakeLock" in navigator&&!document.hidden)await navigator.wakeLock.request("screen");}catch(_){}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&P)keepAwake();});
 
-preload().then(()=>{loading.hidden=true;markButtons();step();keepAwake();});
+async function start(pet){
+  P=pet;EDGES={};
+  P.transitions.forEach(t=>{(EDGES[t.from]=EDGES[t.from]||{})[t.to]=t.clip;});
+  pose=P.start;loading.textContent=P.name+"を呼んでいます…";loading.hidden=false;
+  setupUI();
+  await preload();
+  loading.hidden=true;markButtons();step();keepAwake();
+}
+
+/* boot: ?pet=<id> (the Mac window, or a link) wins, then the remembered pet, then the site's own pet
+   (catalog.json "only": a site that shows one pet and no shelf, like the browser sample), else the shelf */
+let onlyPet=null;
+(async()=>{
+  try{const r=await fetch("pets/catalog.json",{cache:"no-cache"});if(r.ok)onlyPet=(await r.json()).only||null;}catch(_){}
+  const id=params.get("pet")||onlyPet||store.get();
+  if(id){try{const pet=await loadPet(id);if(params.get("pet"))store.set(id);return start(pet);}catch(_){store.set(null);}}
+  showShelf();
+})();
 })();
 </script>

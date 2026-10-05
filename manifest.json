@@ -1,6 +1,6 @@
 {
- "name": "ハニ",
- "short_name": "ハニ",
+ "name": "うちの子ライブ",
+ "short_name": "うちの子",
  "start_url": "./",
  "display": "standalone",
  "background_color": "#ebe3d8",
